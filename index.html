@@ -8,19 +8,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #f0f4ff;
-      --surface: #ffffff;
-      --border: rgba(0,0,0,0.08);
-      --accent: #3b82f6;
-      --accent2: #6366f1;
-      --text: #0f172a;
-      --muted: #94a3b8;
-    }
-
     body {
-      background: var(--bg);
-      color: var(--text);
+      background: #f0f4ff;
       font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
       display: flex;
@@ -35,21 +24,24 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse 60% 50% at 15% 15%, rgba(59,130,246,0.1) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 60% at 85% 85%, rgba(99,102,241,0.1) 0%, transparent 60%);
+        radial-gradient(ellipse 60% 50% at 15% 15%, rgba(59,130,246,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 85% 85%, rgba(99,102,241,0.12) 0%, transparent 60%);
       pointer-events: none;
     }
+
+    /* Hidden canvas */
+    #hidden-canvas { display: none; }
 
     .wrapper {
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 400px;
+      max-width: 360px;
       padding: 24px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 20px;
     }
 
     .back-btn {
@@ -58,113 +50,92 @@
       align-items: center;
       gap: 8px;
       background: white;
-      border: 1px solid var(--border);
-      color: var(--muted);
+      border: 1px solid rgba(0,0,0,0.08);
+      color: #94a3b8;
       font-family: 'DM Sans', sans-serif;
       font-size: 13px;
       padding: 8px 16px;
       border-radius: 99px;
-      cursor: pointer;
-      transition: all 0.2s;
       text-decoration: none;
+      transition: all 0.2s;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .back-btn:hover { border-color: #3b82f6; color: #3b82f6; }
     .back-btn svg { width: 14px; height: 14px; }
 
     .header { text-align: center; }
     .header h1 {
       font-family: 'Syne', sans-serif;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .header p { color: #94a3b8; font-size: 13px; margin-top: 4px; }
 
+    /* Main result card */
     .card {
       width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 20px;
+      background: white;
+      border-radius: 28px;
+      padding: 40px 28px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.1);
+      border: 1px solid rgba(0,0,0,0.06);
+      text-align: center;
     }
 
-    .cam-wrapper {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #e2e8f0;
-      position: relative;
+    .result-icon {
+      font-size: 64px;
+      line-height: 1;
+      min-height: 72px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.3s ease;
     }
-    .cam-wrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover;
-      display: block;
-    }
-    .cam-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .cam-placeholder span { font-size: 40px; }
 
-    .result-box {
+    .result-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #0f172a;
+      min-height: 40px;
+      transition: all 0.3s ease;
+    }
+
+    .prob-bar-wrap {
       width: 100%;
-      background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.06));
-      border: 1px solid rgba(59,130,246,0.15);
-      border-radius: 14px;
-      padding: 18px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: all 0.35s ease;
+      background: #f1f5f9;
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
     }
-    .result-box.show { opacity: 1; transform: translateY(0); }
-
-    .result-label {
-      font-family: 'Syne', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .result-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    .result-badge {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: white;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 8px 14px;
-      border-radius: 10px;
-      white-space: nowrap;
+    .prob-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      transition: width 0.4s ease;
+      width: 0%;
     }
 
+    .prob-text {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    /* Status */
     .status {
-      font-size: 12px;
-      color: var(--muted);
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 12px;
+      color: #94a3b8;
     }
     .dot {
       width: 7px; height: 7px;
@@ -180,8 +151,8 @@
   </style>
 </head>
 <body>
-  <div class="wrapper">
 
+  <div class="wrapper">
     <a class="back-btn" href="https://sites.google.com/view/trngthcshunhthckhng/trang-ch%E1%BB%A7">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -191,83 +162,84 @@
 
     <div class="header">
       <h1>Nhận diện thông minh</h1>
-      <p>Camera tự động nhận diện theo thời gian thực</p>
+      <p>Đang dùng camera để nhận diện</p>
     </div>
 
     <div class="card">
-      <div class="cam-wrapper" id="camWrapper">
-        <div class="cam-placeholder" id="placeholder">
-          <span>📷</span>
-          <p>Đang khởi động camera...</p>
-        </div>
+      <div class="result-icon" id="resultIcon">🔍</div>
+      <div class="result-name" id="resultName">Đang khởi động...</div>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar" id="probBar"></div>
       </div>
-
-      <div class="result-box" id="resultBox">
-        <div>
-          <div class="result-label" id="resultLabel">—</div>
-          <div class="result-sub" id="resultSub">Đang nhận diện...</div>
-        </div>
-        <div class="result-badge" id="resultBadge">—</div>
-      </div>
-
-      <div class="status">
-        <span class="dot" id="dot"></span>
-        <span id="statusText">Đang tải mô hình...</span>
-      </div>
+      <div class="prob-text" id="probText">—</div>
     </div>
 
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="statusText">Đang tải mô hình...</span>
+    </div>
   </div>
+
+  <!-- Hidden canvas for webcam -->
+  <canvas id="hidden-canvas"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
   <script>
     const MODEL_URL = "https://teachablemachine.withgoogle.com/models/RX-fZy0iz/";
-    let model, webcam;
 
     const dot = document.getElementById("dot");
     const statusText = document.getElementById("statusText");
-    const placeholder = document.getElementById("placeholder");
-    const camWrapper = document.getElementById("camWrapper");
-    const resultBox = document.getElementById("resultBox");
-    const resultLabel = document.getElementById("resultLabel");
-    const resultSub = document.getElementById("resultSub");
-    const resultBadge = document.getElementById("resultBadge");
+    const resultIcon = document.getElementById("resultIcon");
+    const resultName = document.getElementById("resultName");
+    const probBar = document.getElementById("probBar");
+    const probText = document.getElementById("probText");
 
     async function init() {
       try {
-        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        const model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
         statusText.textContent = "Đang mở camera...";
 
-        webcam = new tmImage.Webcam(400, 400, true);
+        const webcam = new tmImage.Webcam(200, 200, true);
         await webcam.setup();
         await webcam.play();
 
-        placeholder.style.display = "none";
-        camWrapper.appendChild(webcam.canvas);
-
         dot.classList.add("ready");
         statusText.textContent = "Đang nhận diện...";
-        resultBox.classList.add("show");
+
+        async function loop() {
+          webcam.update();
+          const preds = await model.predict(webcam.canvas);
+          const best = preds.reduce((a, b) => a.probability > b.probability ? a : b);
+          const pct = (best.probability * 100).toFixed(1);
+
+          resultName.textContent = best.className;
+          probBar.style.width = pct + "%";
+          probText.textContent = "Độ tin cậy: " + pct + "%";
+          resultIcon.textContent = getIcon(best.className);
+
+          requestAnimationFrame(loop);
+        }
 
         loop();
       } catch (e) {
-        statusText.textContent = "Lỗi: " + e.message;
-        placeholder.innerHTML = '<span>⚠️</span><p>Không thể mở camera</p>';
+        resultName.textContent = "Lỗi camera";
+        resultIcon.textContent = "⚠️";
+        statusText.textContent = e.message;
         console.error(e);
       }
     }
 
-    async function loop() {
-      webcam.update();
-      const preds = await model.predict(webcam.canvas);
-      const best = preds.reduce((a, b) => a.probability > b.probability ? a : b);
-      const pct = (best.probability * 100).toFixed(1);
-
-      resultLabel.textContent = best.className;
-      resultSub.textContent = "Độ tin cậy: " + pct + "%";
-      resultBadge.textContent = pct + "%";
-
-      requestAnimationFrame(loop);
+    // Map tên class sang emoji (tuỳ chỉnh theo model của bạn)
+    function getIcon(name) {
+      const map = {
+        "Cat": "🐱", "Mèo": "🐱",
+        "Dog": "🐶", "Chó": "🐶",
+        "Person": "🧑", "Người": "🧑",
+        "Car": "🚗", "Xe": "🚗",
+        "None": "🚫", "Không có": "🚫",
+      };
+      return map[name] || "✅";
     }
 
     init();
