@@ -2,75 +2,275 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Teachable Machine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhận diện thông minh</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.08);
+      --accent: #3b82f6;
+      --accent2: #6366f1;
+      --text: #0f172a;
+      --muted: #94a3b8;
+    }
+
     body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: #f0f2f5;
-      font-family: sans-serif;
+      justify-content: center;
+      overflow: hidden;
     }
-    .card {
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 15% 15%, rgba(59,130,246,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 85% 85%, rgba(99,102,241,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .back-btn {
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       background: white;
-      border-radius: 16px;
-      padding: 40px;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    button {
-      padding: 10px 28px;
-      border: none;
-      border-radius: 8px;
-      background: #4f46e5;
-      color: white;
-      font-size: 16px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 99px;
       cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    #result {
-      margin-top: 24px;
-      font-size: 28px;
-      font-weight: bold;
-      color: #1e1e2e;
+    .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .back-btn svg { width: 14px; height: 14px; }
+
+    .header { text-align: center; }
+    .header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    #prob {
-      font-size: 16px;
-      color: #888;
-      margin-top: 4px;
+    .header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    .cam-wrapper {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #e2e8f0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cam-wrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      display: block;
+    }
+    .cam-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .cam-placeholder span { font-size: 40px; }
+
+    .result-box {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.06));
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.35s ease;
+    }
+    .result-box.show { opacity: 1; transform: translateY(0); }
+
+    .result-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .result-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .result-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: pulse 1.4s infinite;
+    }
+    .dot.ready { background: #22c55e; animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <button onclick="init()">Bắt đầu</button>
-    <div id="result">—</div>
-    <div id="prob"></div>
+  <div class="wrapper">
+
+    <a class="back-btn" href="https://sites.google.com/view/trngthcshunhthckhng/trang-ch%E1%BB%A7">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Trở lại
+    </a>
+
+    <div class="header">
+      <h1>Nhận diện thông minh</h1>
+      <p>Camera tự động nhận diện theo thời gian thực</p>
+    </div>
+
+    <div class="card">
+      <div class="cam-wrapper" id="camWrapper">
+        <div class="cam-placeholder" id="placeholder">
+          <span>📷</span>
+          <p>Đang khởi động camera...</p>
+        </div>
+      </div>
+
+      <div class="result-box" id="resultBox">
+        <div>
+          <div class="result-label" id="resultLabel">—</div>
+          <div class="result-sub" id="resultSub">Đang nhận diện...</div>
+        </div>
+        <div class="result-badge" id="resultBadge">—</div>
+      </div>
+
+      <div class="status">
+        <span class="dot" id="dot"></span>
+        <span id="statusText">Đang tải mô hình...</span>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
   <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/RX-fZy0iz/";
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/RX-fZy0iz/";
     let model, webcam;
 
+    const dot = document.getElementById("dot");
+    const statusText = document.getElementById("statusText");
+    const placeholder = document.getElementById("placeholder");
+    const camWrapper = document.getElementById("camWrapper");
+    const resultBox = document.getElementById("resultBox");
+    const resultLabel = document.getElementById("resultLabel");
+    const resultSub = document.getElementById("resultSub");
+    const resultBadge = document.getElementById("resultBadge");
+
     async function init() {
-      model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-      webcam = new tmImage.Webcam(200, 200, true);
-      await webcam.setup();
-      await webcam.play();
-      loop();
+      try {
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        statusText.textContent = "Đang mở camera...";
+
+        webcam = new tmImage.Webcam(400, 400, true);
+        await webcam.setup();
+        await webcam.play();
+
+        placeholder.style.display = "none";
+        camWrapper.appendChild(webcam.canvas);
+
+        dot.classList.add("ready");
+        statusText.textContent = "Đang nhận diện...";
+        resultBox.classList.add("show");
+
+        loop();
+      } catch (e) {
+        statusText.textContent = "Lỗi: " + e.message;
+        placeholder.innerHTML = '<span>⚠️</span><p>Không thể mở camera</p>';
+        console.error(e);
+      }
     }
 
     async function loop() {
       webcam.update();
-      const best = (await model.predict(webcam.canvas))
-        .reduce((a, b) => a.probability > b.probability ? a : b);
-      document.getElementById("result").textContent = best.className;
-      document.getElementById("prob").textContent = (best.probability * 100).toFixed(1) + "%";
+      const preds = await model.predict(webcam.canvas);
+      const best = preds.reduce((a, b) => a.probability > b.probability ? a : b);
+      const pct = (best.probability * 100).toFixed(1);
+
+      resultLabel.textContent = best.className;
+      resultSub.textContent = "Độ tin cậy: " + pct + "%";
+      resultBadge.textContent = pct + "%";
+
       requestAnimationFrame(loop);
     }
+
+    init();
   </script>
 </body>
 </html>
