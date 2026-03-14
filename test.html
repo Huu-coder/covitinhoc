@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Teachable Machine Demo</title>
+</head>
+<body>
+  <h1>Nhận diện hình ảnh</h1>
+  <button onclick="init()">Bắt đầu</button>
+  <div id="webcam-container"></div>
+  <div id="label-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/RX-fZy0iz/";
+
+    let model, webcam, labelContainer;
+
+    async function init() {
+      model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+
+      webcam = new tmImage.Webcam(300, 300, true);
+      await webcam.setup();
+      await webcam.play();
+
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+      labelContainer = document.getElementById("label-container");
+
+      window.requestAnimationFrame(loop);
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+
+      const best = prediction.reduce((max, p) =>
+        p.probability > max.probability ? p : max
+      );
+
+      labelContainer.innerHTML = `
+        <strong>${best.className}</strong>: ${(best.probability * 100).toFixed(1)}%
+      `;
+    }
+  </script>
+</body>
+</html>
